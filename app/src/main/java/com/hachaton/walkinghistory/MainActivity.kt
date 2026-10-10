@@ -15,8 +15,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.hachaton.walkinghistory.ui.screens.FavoriteScreen
+import com.hachaton.walkinghistory.ui.screens.FontScreen
+import com.hachaton.walkinghistory.ui.screens.FriendsScreen
+import com.hachaton.walkinghistory.ui.screens.HistoryScreen
 import com.hachaton.walkinghistory.ui.screens.HomeScreen
+import com.hachaton.walkinghistory.ui.screens.NotificationScreen
 import com.hachaton.walkinghistory.ui.screens.SettingsScreen
+import com.hachaton.walkinghistory.ui.screens.StaredScreen
 import com.hachaton.walkinghistory.ui.screens.WelcomeScreen
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
@@ -46,6 +52,9 @@ class MainActivity : ComponentActivity() {
                         "home" -> {
                             HomeScreen(
                                 username = savedUsername,
+                                onStarClick = {
+                                    currentScreen = "stared"
+                                },
                                 onSettingsClick = {
                                     currentScreen = "settings"
                                 }
@@ -55,7 +64,46 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen(
                                 onBackClick = {
                                     currentScreen = "home"
+                                },
+                                onOptionClick = { title ->
+                                    when (title) {
+                                        "Znajomi" -> currentScreen = "friends"
+                                        "Ulubione" -> currentScreen = "favorite"
+                                        "Powiadomienia" -> currentScreen = "notification"
+                                        "Czcionka" -> currentScreen = "font"
+                                        "Historia" -> currentScreen = "history"
+                                    }
                                 }
+                            )
+                        }
+                        "stared" -> {
+                            StaredScreen(
+                                onBackClick = { currentScreen = "home" }
+                            )
+                        }
+                        "friends" -> {
+                            FriendsScreen(
+                                onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "favorite" -> {
+                            FavoriteScreen(
+                                onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "notification" -> {
+                            NotificationScreen(
+                                onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "font" -> {
+                            FontScreen(
+                                onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "history" -> {
+                            HistoryScreen(
+                                onBackClick = { currentScreen = "settings" }
                             )
                         }
                     }
