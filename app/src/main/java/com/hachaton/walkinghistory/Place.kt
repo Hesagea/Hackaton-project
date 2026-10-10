@@ -9,6 +9,8 @@ data class Place(
     val id: Long = 0,
     val name: String,
     val description: String,
+    val narration: String,
+    val scene: String,
     val latitude: Double,
     val longitude: Double
 )
