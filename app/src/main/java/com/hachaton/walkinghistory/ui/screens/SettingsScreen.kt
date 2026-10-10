@@ -56,18 +56,19 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background, // Tło ekranu (Bez)
         topBar = {
-            // Górny pasek z automatycznym odstępem odzegarka (statusBarsPadding)
+            // Górny pasek z automatycznym odstępem od zegarka (statusBarsPadding)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Green)
-                    .statusBarsPadding() // 👈 Omija zegarek, baterię i pasek stanu systemu
+                    .statusBarsPadding()
                     .height(70.dp)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Strzałka powrotu z wygodnym powiększonym obszarem kliknięcia
+                // Strzałka powrotu
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier.size(56.dp)
@@ -82,7 +83,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Nagłówek Ustawienia umieszczony poniżej zegarka
+                // Nagłówek Ustawienia
                 Text(
                     text = "Ustawienia",
                     style = MaterialTheme.typography.titleLarge,
@@ -96,6 +97,7 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
                 .padding(vertical = 12.dp, horizontal = 20.dp)
         ) {
@@ -107,7 +109,7 @@ fun SettingsScreen(
                         .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Obrazek po lewej lub powiększone symbole "A a"
+                    // Obrazek po lewej lub symbole "A a"
                     if (option.iconResId != null) {
                         Image(
                             painter = painterResource(id = option.iconResId),
@@ -141,7 +143,7 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.width(20.dp))
 
-                    // Powiększone nazwy nagłówków opcji
+                    // Nazwa opcji
                     Text(
                         text = option.title,
                         style = MaterialTheme.typography.titleLarge,
