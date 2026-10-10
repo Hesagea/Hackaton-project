@@ -45,7 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
             private suspend fun populateInitialData(dao: PlaceDao) {
                 val samplePlaces = listOf(
                     Place(
-                        name = "C-13 (Zintegrowane Centrum Studenckie, czyli \„Serowiec\”)\n",
+                        name = "C-13 (Zintegrowane Centrum Studenckie, czyli „Serowiec”)\n",
                         description = "Rys historyczny: Oddany do użytku w 2007 roku budynek miał być nowoczesnym, integrującym sercem kampusu. Jego projekt (stworzony przez biuro Manufaktura 1) celowo łamał nudne, kanciaste standardy – stąd te słynne, okrągłe okna.\n",
                         narration = "Narracja: Z zewnątrz wygląda, jakby kosmici zgubili podczas pikniku gigantyczny blok ementalera i postanowili zostawić go nad brzegiem Odry. Wchodzisz do środka z naiwnym planem szybkiego wydrukowania notatek. Jednak nieregularne rozmieszczenie okien błyskawicznie zaburza twój błędnik. Schody zdają się prowadzić jednocześnie w górę i w dół (niczym na obrazach Eschera), a ty zaczynasz czuć się jak mysz w skomplikowanym eksperymencie psychologicznym.\n",
                         scene = "Scenka z życia wzięta:\n" +

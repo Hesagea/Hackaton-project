@@ -1,3 +1,5 @@
+package com.hachaton.walkinghistory
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
