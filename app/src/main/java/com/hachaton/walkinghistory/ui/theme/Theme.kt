@@ -1,20 +1,16 @@
 package com.hachaton.walkinghistory.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
     primary = Green,
     secondary = Bez,
     tertiary = Blue,
     background = Bez,
+    surface = Bez,
     onBackground = Brown,
     onSurface = Brown
 )
@@ -24,23 +20,18 @@ private val LightColorScheme = lightColorScheme(
     secondary = Bez,
     tertiary = Blue,
     background = Bez,
+    surface = Bez,
     onBackground = Brown,
     onSurface = Brown
 )
 
 @Composable
 fun WalkingHistoryTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false,    // Wymuszamy zawsze paletę kolorów aplikacji
+    dynamicColor: Boolean = false, // Wyłączamy dynamiczne podmienianie kolorów przez system Android
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
