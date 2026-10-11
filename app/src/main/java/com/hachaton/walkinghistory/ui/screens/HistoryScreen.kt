@@ -139,7 +139,7 @@ fun HistoryScreen(
                             )
 
                             Text(
-                                text = "${daily.items.size} miejsca",
+                                text = "${daily.items.size} odziewdzin(y)",
                                 style = MaterialTheme.typography.titleLarge,
                                 color = Brown,
                                 fontSize = 24.sp,
