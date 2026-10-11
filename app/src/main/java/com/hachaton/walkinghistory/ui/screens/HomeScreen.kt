@@ -64,6 +64,7 @@ import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     username: String = "",
     onStartClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
@@ -129,7 +130,7 @@ fun HomeScreen(
     val focusOptions = listOf("Bliskie zeru", "3 - 6 sekund", "10 sekund", "15 sekund", "30 sekund i więcej")
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         topBar = {
             Row(
                 modifier = Modifier

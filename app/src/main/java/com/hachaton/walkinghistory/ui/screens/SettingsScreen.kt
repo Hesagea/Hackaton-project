@@ -43,6 +43,7 @@ data class SettingOption(
 
 @Composable
 fun SettingsScreen(
+    modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onOptionClick: (String) -> Unit = {}
 ) {
@@ -55,7 +56,7 @@ fun SettingsScreen(
     )
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background, // Tło ekranu (Bez)
         topBar = {
             // Górny pasek z automatycznym odstępem od zegarka (statusBarsPadding)

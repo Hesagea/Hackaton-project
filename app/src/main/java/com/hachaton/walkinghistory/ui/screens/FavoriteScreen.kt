@@ -31,10 +31,11 @@ import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
 fun FavoriteScreen(
+    modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {}
 ) {
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(

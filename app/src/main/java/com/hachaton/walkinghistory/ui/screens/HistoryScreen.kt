@@ -40,6 +40,7 @@ data class HistoryEntry(
 
 @Composable
 fun HistoryScreen(
+    modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onItemClick: (HistoryEntry) -> Unit = {}
 ) {
@@ -49,7 +50,7 @@ fun HistoryScreen(
     )
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // Górny pasek z nagłówkiem Historia
