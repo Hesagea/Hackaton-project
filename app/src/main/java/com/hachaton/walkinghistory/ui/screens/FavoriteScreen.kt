@@ -65,6 +65,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.hachaton.walkinghistory.ui.screens.HistoryManager
+
 // --- BEZPIECZNY MANAGER ULUBIONYCH ---
 class FavoritesManager(context: Context) {
     private val prefs = context.getSharedPreferences("walking_history_favorites", Context.MODE_PRIVATE)
@@ -84,7 +86,12 @@ class FavoritesManager(context: Context) {
 fun FavoriteScreen(
     onBackClick: () -> Unit = {}
 ) {
+
+
     val context = LocalContext.current
+
+    val historyManager = remember { HistoryManager(context) }
+
     val db = remember { AppDatabase.getDatabase(context) }
     val favoritesManager = remember { FavoritesManager(context) }
     val ttsManager = remember { TtsManager(context) }
@@ -237,6 +244,7 @@ fun FavoriteScreen(
                                     IconButton(onClick = {
                                         miejsceDzwiek = place
                                         val pelnyTekst = "${place.name}. ${place.description} ${place.narration} ${place.scene}"
+                                        historyManager.addEntry(place.name, isFromFavorites = true)
                                         ttsManager.speak(pelnyTekst)
                                     }) {
                                         Icon(

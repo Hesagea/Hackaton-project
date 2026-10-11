@@ -65,6 +65,8 @@ import com.hachaton.walkinghistory.ui.theme.Brown
 import com.hachaton.walkinghistory.ui.theme.Green
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
+import com.hachaton.walkinghistory.ui.screens.HistoryManager
+
 @Composable
 fun HomeScreen(
     username: String = "",
@@ -106,6 +108,8 @@ fun HomeScreen(
                 permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
         hasLocationPermission = isGranted
     }
+
+    val historyManager = remember { HistoryManager(context) }
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
@@ -270,8 +274,9 @@ fun HomeScreen(
 
                                             // Łączymy teksty i odpalamy lektora
                                             val pelnyTekst = "${closestPlace.name}. ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
-                                            ttsManager.speak(pelnyTekst)
 
+                                            ttsManager.speak(pelnyTekst)
+                                            historyManager.addEntry(closestPlace.name, isFromFavorites = false)
                                             onStartClick() // Powiadamia aplikację o starcie
                                         }
                                     }
