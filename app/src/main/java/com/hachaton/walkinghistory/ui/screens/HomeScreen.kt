@@ -1,5 +1,8 @@
 package com.hachaton.walkinghistory.ui.screens
 
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,14 +28,17 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
 import com.hachaton.walkinghistory.R
 import com.hachaton.walkinghistory.ui.components.MyMapView
@@ -61,6 +68,33 @@ fun HomeScreen(
 
     // Stan suwaka od 0 do 4 (domyślnie środkowy index 2 = 10 sekund)
     var focusStep by rememberSaveable { mutableFloatStateOf(2f) }
+
+    val context = LocalContext.current
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        hasLocationPermission = isGranted
+    }
+
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
 
     // 5 opcji czasu skupienia
     val focusOptions = listOf("Bliskie zeru", "3 - 6 sekund", "10 sekund", "15 sekund", "30 sekund i więcej")
@@ -161,7 +195,7 @@ fun HomeScreen(
                 .padding(innerPadding)
         ) {
             // Mapka po środku ekranu
-            MyMapView()
+            MyMapView(hasLocationPermission = hasLocationPermission)
 
             // ❓ Okienko z pytaniem o czas skupienia po przyciśnięciu START
             if (showFocusDialog) {
