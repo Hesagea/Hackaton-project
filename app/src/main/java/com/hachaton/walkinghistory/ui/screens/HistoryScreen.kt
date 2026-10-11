@@ -1,7 +1,10 @@
 package com.hachaton.walkinghistory.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,9 +26,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,27 +42,21 @@ import com.hachaton.walkinghistory.ui.theme.Brown
 import com.hachaton.walkinghistory.ui.theme.Green
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
-data class HistoryEntry(
-    val date: String,
-    val placesCount: Int
-)
-
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onItemClick: (HistoryEntry) -> Unit = {}
 ) {
-    val historyItems = listOf(
-        HistoryEntry("11.10.2026", 4),
-        HistoryEntry("10.10.2026", 3)
-    )
+    val context = LocalContext.current
+    val historyManager = remember { HistoryManager(context) }
+    val historyData = remember { historyManager.getHistory() }
+
+    var expandedDate by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            // Górny pasek z nagłówkiem Historia
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,53 +90,107 @@ fun HistoryScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(vertical = 12.dp, horizontal = 20.dp)
-        ) {
-            items(historyItems) { item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onItemClick(item) }
-                        .padding(vertical = 18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 1. Data po lewej stronie
-                    Text(
-                        text = item.date,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Brown,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.width(140.dp)
-                    )
-
-                    // 2. Pionowa linia rozdzielająca
-                    VerticalDivider(
-                        modifier = Modifier
-                            .height(28.dp)
-                            .padding(horizontal = 12.dp),
-                        color = Brown.copy(alpha = 0.4f),
-                        thickness = 1.5.dp
-                    )
-
-                    // 3. Ilość miejsc wyrównana do lewej strony od linii, bez emoji, taki sam rozmiar tekstu
-                    Text(
-                        text = "${item.placesCount} miejsca",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Brown,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                HorizontalDivider(
-                    color = Brown.copy(alpha = 0.2f),
-                    thickness = 1.dp
+        if (historyData.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Brak historii.\nWyrusz na swój pierwszy spacer!",
+                    color = Brown.copy(alpha = 0.7f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(vertical = 12.dp, horizontal = 20.dp)
+            ) {
+                items(historyData) { daily ->
+                    val isExpanded = expandedDate == daily.date
+
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expandedDate = if (isExpanded) null else daily.date }
+                                .padding(vertical = 18.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = daily.date,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Brown,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.width(140.dp)
+                            )
+
+                            VerticalDivider(
+                                modifier = Modifier
+                                    .height(28.dp)
+                                    .padding(horizontal = 12.dp),
+                                color = Brown.copy(alpha = 0.4f),
+                                thickness = 1.5.dp
+                            )
+
+                            Text(
+                                text = "${daily.items.size} odziewdzin(y)",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Brown,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        AnimatedVisibility(visible = isExpanded) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
+                            ) {
+                                daily.items.forEach { item ->
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = item.time,
+                                            color = Brown,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            val shortName = item.placeName.substringBefore("(").trim()
+                                            Text(
+                                                text = shortName,
+                                                color = Brown,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 18.sp
+                                            )
+                                            Text(
+                                                text = item.type,
+                                                color = Brown.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(
+                            color = Brown.copy(alpha = 0.2f),
+                            thickness = 1.dp
+                        )
+                    }
+                }
             }
         }
     }

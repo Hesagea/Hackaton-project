@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,12 +53,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
+
+// --- IMPORTY BAZY I LEKTORA ---
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import com.hachaton.walkinghistory.AppDatabase
+import com.hachaton.walkinghistory.NearbyPlacesManager
+import com.hachaton.walkinghistory.Place
+import com.hachaton.walkinghistory.TtsManager
+
 import com.hachaton.walkinghistory.R
 import com.hachaton.walkinghistory.ui.components.MyMapView
 import com.hachaton.walkinghistory.ui.theme.Brown
 import com.hachaton.walkinghistory.ui.theme.Green
 import com.hachaton.walkinghistory.ui.theme.Orange
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
+
+import com.hachaton.walkinghistory.ui.screens.HistoryManager
 
 @Composable
 fun HomeScreen(
@@ -69,6 +82,7 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {}
 ) {
     val displayName = if (username.isNotBlank()) username else "Użytkowniku"
+    val context = LocalContext.current
 
     // Stan do wyświetlania pytania o czas skupienia po naciśnięciu START
     var showFocusDialog by rememberSaveable { mutableStateOf(false) }
@@ -76,7 +90,19 @@ fun HomeScreen(
     // Stan suwaka od 0 do 4 (domyślnie środkowy index 2 = 10 sekund)
     var focusStep by rememberSaveable { mutableFloatStateOf(2f) }
 
-    val context = LocalContext.current
+    //todo
+    // NOWE STANY
+    var wybraneMiejsce by remember { mutableStateOf<Place?>(null) }
+    var miejscaZBazy by remember { mutableStateOf<List<Place>>(emptyList()) }
+
+    val ttsManager = remember { TtsManager(context) }
+    val coroutineScope = rememberCoroutineScope() // Pozwala uruchamiać rzeczy w tle po kliknięciu
+
+    // Inicjalizacja bazy i Managera Miejsc
+    val db = remember { AppDatabase.getDatabase(context) }
+    val nearbyPlacesManager = remember { NearbyPlacesManager(context, db.placeDao()) }
+//todo
+
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -93,6 +119,8 @@ fun HomeScreen(
                 permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
         hasLocationPermission = isGranted
     }
+
+    val historyManager = remember { HistoryManager(context) }
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
@@ -293,8 +321,23 @@ fun HomeScreen(
                             // 🚀 Przycisk ROZPOCZNIJ
                             Button(
                                 onClick = {
-                                    showFocusDialog = false
-                                    onStartClick() // Wywołanie rozpoczęcia spaceru
+                                    showFocusDialog = false // Zamykamy suwak
+
+                                    // Uruchamiamy wyszukiwanie lokalizacji w tle
+                                    coroutineScope.launch {
+                                        // Ustawiamy promień na 5 kilometrów (5.0), żeby na 100% zadziałało na prezentacji z wnętrza budynku!
+                                        val closestPlace = nearbyPlacesManager.getClosestPlace(5.0)
+
+                                        if (closestPlace != null) {
+                                            wybraneMiejsce = closestPlace // To wyświetla kartę informacyjną
+
+                                            // Łączymy teksty i odpalamy lektora
+                                            val pelnyTekst = "${closestPlace.name}. ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
+                                            ttsManager.speak(pelnyTekst)
+
+                                            onStartClick() // Powiadamia aplikację o starcie
+                                        }
+                                    }
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Brown,
@@ -318,6 +361,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
