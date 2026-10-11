@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,7 +53,9 @@ import kotlin.math.roundToInt
 // --- IMPORTY BAZY I LEKTORA ---
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import com.hachaton.walkinghistory.AppDatabase
+import com.hachaton.walkinghistory.NearbyPlacesManager
 import com.hachaton.walkinghistory.Place
 import com.hachaton.walkinghistory.TtsManager
 
@@ -77,11 +80,15 @@ fun HomeScreen(
     var focusStep by rememberSaveable { mutableFloatStateOf(2f) }
 
     // NOWE STANY
-    var showPlacesList by rememberSaveable { mutableStateOf(false) }
     var wybraneMiejsce by remember { mutableStateOf<Place?>(null) }
     var miejscaZBazy by remember { mutableStateOf<List<Place>>(emptyList()) }
 
     val ttsManager = remember { TtsManager(context) }
+    val coroutineScope = rememberCoroutineScope() // Pozwala uruchamiać rzeczy w tle po kliknięciu
+
+    // Inicjalizacja bazy i Managera Miejsc
+    val db = remember { AppDatabase.getDatabase(context) }
+    val nearbyPlacesManager = remember { NearbyPlacesManager(context, db.placeDao()) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -252,7 +259,22 @@ fun HomeScreen(
                             Button(
                                 onClick = {
                                     showFocusDialog = false // Zamykamy suwak
-                                    showPlacesList = true   // Otwieramy listę budynków
+
+                                    // Uruchamiamy wyszukiwanie lokalizacji w tle
+                                    coroutineScope.launch {
+                                        // Ustawiamy promień na 5 kilometrów (5.0), żeby na 100% zadziałało na prezentacji z wnętrza budynku!
+                                        val closestPlace = nearbyPlacesManager.getClosestPlace(5.0)
+
+                                        if (closestPlace != null) {
+                                            wybraneMiejsce = closestPlace // To wyświetla kartę informacyjną
+
+                                            // Łączymy teksty i odpalamy lektora
+                                            val pelnyTekst = "${closestPlace.name}. ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
+                                            ttsManager.speak(pelnyTekst)
+
+                                            onStartClick() // Powiadamia aplikację o starcie
+                                        }
+                                    }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
                                 shape = RoundedCornerShape(20.dp),
@@ -265,61 +287,6 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Okienko z wyborem budynku (pojawia się po kliknięciu ROZPOCZNIJ)
-            if (showPlacesList) {
-                Dialog(onDismissRequest = { showPlacesList = false }) {
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                        modifier = Modifier.fillMaxWidth().padding(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "Gdzie idziemy?",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Brown,
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-
-                            if (miejscaZBazy.isEmpty()) {
-                                Text(
-                                    text = "Pobieranie budynków...",
-                                    color = Brown,)
-                            } else {
-                                miejscaZBazy.forEach { place ->
-                                    Button(
-                                        onClick = {
-                                            wybraneMiejsce = place
-                                            showPlacesList = false
-
-                                            // Łączymy wszystkie informacje w jeden spójny tekst.
-                                            // Znak kropki i spacji ". " sprawia, że lektor robi naturalną pauzę.
-                                            val pelnyTekst = "${place.name} ${place.description} ${place.narration} ${place.scene}"
-
-                                            // Przekazujemy cały połączony tekst do czytania
-                                            ttsManager.speak(pelnyTekst)
-
-                                            onStartClick()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Green, contentColor = Brown),
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                    ) {
-                                        val krotkaNazwa = place.name.substringBefore("(").trim()
-                                        Text(text = krotkaNazwa, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. Karta ze szczegółami (pojawia się, gdy lektor czyta)
             if (wybraneMiejsce != null) {
                 Dialog(onDismissRequest = {
                     ttsManager.stop()
@@ -335,6 +302,14 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             val krotkaNazwa = wybraneMiejsce!!.name.substringBefore("(").trim()
+
+                            Text(
+                                text = "Jesteś w pobliżu:",
+                                color = Brown,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center
+                            )
+
                             Text(
                                 text = krotkaNazwa,
                                 color = Brown,
@@ -369,6 +344,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
