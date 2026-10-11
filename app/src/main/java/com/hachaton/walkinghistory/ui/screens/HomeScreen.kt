@@ -5,9 +5,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,7 +39,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +56,7 @@ import com.hachaton.walkinghistory.R
 import com.hachaton.walkinghistory.ui.components.MyMapView
 import com.hachaton.walkinghistory.ui.theme.Brown
 import com.hachaton.walkinghistory.ui.theme.Green
+import com.hachaton.walkinghistory.ui.theme.Orange
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
@@ -59,7 +64,8 @@ fun HomeScreen(
     username: String = "",
     onStartClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val displayName = if (username.isNotBlank()) username else "Użytkowniku"
 
@@ -108,17 +114,25 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .background(Green)
                     .statusBarsPadding()
-                    .height(50.dp)
+                    .height(70.dp)
                     .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Witaj $displayName!",
                     style = MaterialTheme.typography.titleLarge,
                     color = Brown,
-                    fontSize = 22.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
+                IconButton(onClick = onProfileClick) {
+                    Image(
+                        painter = painterResource(id = R.drawable.braz_pokolorowany),
+                        contentDescription = "Profil",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         },
         bottomBar = {
@@ -131,18 +145,24 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Lewa sekcja (Gwiazdka)
+                // 1. Lewa sekcja (Gwiazdka w idealnie wyśrodkowanym brązowym boxie)
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    IconButton(
-                        onClick = onStarClick,
-                        modifier = Modifier.size(80.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onStarClick() }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.gwiazdka),
+                            painter = painterResource(id = R.drawable.gwiazdkabezowa),
                             contentDescription = "Gwiazdka",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -170,18 +190,24 @@ fun HomeScreen(
                     }
                 }
 
-                // 3. Prawa sekcja (Kołowrotek)
+                // 3. Prawa sekcja (Kołowrotek w idealnie wyśrodkowanym brązowym boxie)
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    IconButton(
-                        onClick = onSettingsClick,
-                        modifier = Modifier.size(100.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onSettingsClick() }
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.kolowrotek),
+                            painter = painterResource(id = R.drawable.kolowrotekbezowy),
                             contentDescription = "Ustawienia",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
