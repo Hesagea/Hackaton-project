@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "home" -> {
                             HomeScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 username = savedUsername,
                                 onStarClick = {
                                     currentScreen = "stared"
@@ -72,6 +73,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "settings" -> {
                             SettingsScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = {
                                     currentScreen = "home"
                                 },
@@ -88,31 +90,37 @@ class MainActivity : ComponentActivity() {
                         }
                         "stared" -> {
                             StaredScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "home" }
                             )
                         }
                         "friends" -> {
                             FriendsScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "favorite" -> {
                             FavoriteScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "notification" -> {
                             NotificationScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "font" -> {
                             FontScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "history" -> {
                             HistoryScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
