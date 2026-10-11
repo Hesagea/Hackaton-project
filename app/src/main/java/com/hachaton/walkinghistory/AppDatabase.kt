@@ -48,7 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
                         name = "C-13 (Zintegrowane Centrum Studenckie, czyli „Serowiec”)\n",
                         description = "Rys historyczny: Oddany do użytku w 2007 roku budynek miał być nowoczesnym, integrującym sercem kampusu. Jego projekt (stworzony przez biuro Manufaktura 1) celowo łamał nudne, kanciaste standardy – stąd te słynne, okrągłe okna.\n",
                         narration = "Narracja: Z zewnątrz wygląda, jakby kosmici zgubili podczas pikniku gigantyczny blok ementalera i postanowili zostawić go nad brzegiem Odry. Wchodzisz do środka z naiwnym planem szybkiego wydrukowania notatek. Jednak nieregularne rozmieszczenie okien błyskawicznie zaburza twój błędnik. Schody zdają się prowadzić jednocześnie w górę i w dół (niczym na obrazach Eschera), a ty zaczynasz czuć się jak mysz w skomplikowanym eksperymencie psychologicznym.\n",
-                        scene = "Scenka z życia wzięta:\n" +
+                        scene = "Scenka z życia wzięta:  \n" +
                                 "(Korytarz na 2. piętrze, które okazuje się być półpiętrem)\n" +
                                 "– Przepraszam, wiesz jak dojść do sali 2.17? – pyta spocony pierwszoroczniak, trzymając w ręku wydruk planu zajęć.\n" +
                                 "– Stary, ja tu szukam wyjścia od wtorku – odpowiada blady student o pustym spojrzeniu. – Byłem na parterze, wszedłem po schodach na górę i wylądowałem w piwnicy. Masz może powerbanka? I trochę wody?\n",

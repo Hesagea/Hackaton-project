@@ -48,6 +48,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
+
+// --- IMPORTY BAZY I LEKTORA ---
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.hachaton.walkinghistory.AppDatabase
+import com.hachaton.walkinghistory.Place
+import com.hachaton.walkinghistory.TtsManager
+
 import com.hachaton.walkinghistory.R
 import com.hachaton.walkinghistory.ui.components.MyMapView
 import com.hachaton.walkinghistory.ui.theme.Brown
@@ -62,14 +70,19 @@ fun HomeScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val displayName = if (username.isNotBlank()) username else "Użytkowniku"
+    val context = LocalContext.current
 
-    // Stan do wyświetlania pytania o czas skupienia po naciśnięciu START
+    // STANY Z ORYGINALNEGO KODU
     var showFocusDialog by rememberSaveable { mutableStateOf(false) }
-
-    // Stan suwaka od 0 do 4 (domyślnie środkowy index 2 = 10 sekund)
     var focusStep by rememberSaveable { mutableFloatStateOf(2f) }
 
-    val context = LocalContext.current
+    // NOWE STANY
+    var showPlacesList by rememberSaveable { mutableStateOf(false) }
+    var wybraneMiejsce by remember { mutableStateOf<Place?>(null) }
+    var miejscaZBazy by remember { mutableStateOf<List<Place>>(emptyList()) }
+
+    val ttsManager = remember { TtsManager(context) }
+
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -94,15 +107,30 @@ fun HomeScreen(
                 android.Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
+
+        // Pobieranie danych z bazy z zabezpieczeniem przed "wyścigiem"
+        val db = AppDatabase.getDatabase(context)
+        withContext(Dispatchers.IO) {
+            var pobrane = db.placeDao().getAllPlacesList()
+
+            // Jeśli lista jest pusta, dajemy bazie chwilę na zapisanie danych w tle
+            var proby = 0
+            while (pobrane.isEmpty() && proby < 10) {
+                kotlinx.coroutines.delay(300) // Czekamy 0.3 sekundy
+                pobrane = db.placeDao().getAllPlacesList() // Pytamy bazę ponownie
+                proby++
+            }
+
+            // Wrzucamy dane do naszego interfejsu
+            miejscaZBazy = pobrane
+        }
     }
 
-    // 5 opcji czasu skupienia
     val focusOptions = listOf("Bliskie zeru", "3 - 6 sekund", "10 sekund", "15 sekund", "30 sekund i więcej")
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            // Górny pasek z powitaniem użytkownika
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,7 +150,6 @@ fun HomeScreen(
             }
         },
         bottomBar = {
-            // Pasek narzędzi na dole
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -131,15 +158,8 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Lewa sekcja (Gwiazdka)
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(
-                        onClick = onStarClick,
-                        modifier = Modifier.size(80.dp)
-                    ) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    IconButton(onClick = onStarClick, modifier = Modifier.size(80.dp)) {
                         Image(
                             painter = painterResource(id = R.drawable.gwiazdka),
                             contentDescription = "Gwiazdka",
@@ -147,38 +167,18 @@ fun HomeScreen(
                         )
                     }
                 }
-
-                // 2. Środkowa sekcja (Przycisk START - otwiera okno z pytaniem)
-                Box(
-                    modifier = Modifier.weight(1.8f),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.weight(1.8f), contentAlignment = Alignment.Center) {
                     Button(
-                        onClick = { showFocusDialog = true }, // 👈 Otwiera okienko z pytaniem
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Brown,
-                            contentColor = Color.White
-                        ),
+                        onClick = { showFocusDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
                         shape = RoundedCornerShape(30.dp),
                         modifier = Modifier.height(72.dp)
                     ) {
-                        Text(
-                            text = "START",
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = "START", fontSize = 30.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-
-                // 3. Prawa sekcja (Kołowrotek)
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(
-                        onClick = onSettingsClick,
-                        modifier = Modifier.size(100.dp)
-                    ) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    IconButton(onClick = onSettingsClick, modifier = Modifier.size(100.dp)) {
                         Image(
                             painter = painterResource(id = R.drawable.kolowrotek),
                             contentDescription = "Ustawienia",
@@ -194,27 +194,21 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Mapka po środku ekranu
             MyMapView(hasLocationPermission = hasLocationPermission)
 
-            // ❓ Okienko z pytaniem o czas skupienia po przyciśnięciu START
+            // 1. Okienko z czasem skupienia
             if (showFocusDialog) {
                 Dialog(onDismissRequest = { showFocusDialog = false }) {
                     Card(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(12.dp)
                     ) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // Nagłówek pytania
                             Text(
                                 text = "Jaki masz czas skupienia?",
                                 style = MaterialTheme.typography.titleLarge,
@@ -224,8 +218,6 @@ fun HomeScreen(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
-
-                            // Wybrana wartość podświetlona
                             val currentIndex = focusStep.roundToInt().coerceIn(0, 4)
                             Text(
                                 text = focusOptions[currentIndex],
@@ -235,24 +227,18 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
-
-                            // 🎚️ Suwak z 5 pozycjami
                             Slider(
                                 value = focusStep,
                                 onValueChange = { focusStep = it },
                                 valueRange = 0f..4f,
-                                steps = 3, // Daje 5 pozycji (0, 1, 2 [środek], 3, 4)
+                                steps = 3,
                                 colors = SliderDefaults.colors(
                                     thumbColor = Brown,
                                     activeTrackColor = Green,
                                     inactiveTrackColor = Brown.copy(alpha = 0.2f)
                                 ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                             )
-
-                            // Etykiety krańcowe pod suwakiem
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -260,29 +246,121 @@ fun HomeScreen(
                                 Text("Bliskie zeru", fontSize = 12.sp, color = Brown.copy(alpha = 0.7f))
                                 Text("30s i więcej", fontSize = 12.sp, color = Brown.copy(alpha = 0.7f))
                             }
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Przycisk ROZPOCZNIJ
+                            Button(
+                                onClick = {
+                                    showFocusDialog = false // Zamykamy suwak
+                                    showPlacesList = true   // Otwieramy listę budynków
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth(0.85f).height(52.dp)
+                            ) {
+                                Text(text = "ROZPOCZNIJ", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Okienko z wyborem budynku (pojawia się po kliknięciu ROZPOCZNIJ)
+            if (showPlacesList) {
+                Dialog(onDismissRequest = { showPlacesList = false }) {
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                        modifier = Modifier.fillMaxWidth().padding(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Gdzie idziemy?",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Brown,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+
+                            if (miejscaZBazy.isEmpty()) {
+                                Text(
+                                    text = "Pobieranie budynków...",
+                                    color = Brown,)
+                            } else {
+                                miejscaZBazy.forEach { place ->
+                                    Button(
+                                        onClick = {
+                                            wybraneMiejsce = place
+                                            showPlacesList = false
+
+                                            // Łączymy wszystkie informacje w jeden spójny tekst.
+                                            // Znak kropki i spacji ". " sprawia, że lektor robi naturalną pauzę.
+                                            val pelnyTekst = "${place.name} ${place.description} ${place.narration} ${place.scene}"
+
+                                            // Przekazujemy cały połączony tekst do czytania
+                                            ttsManager.speak(pelnyTekst)
+
+                                            onStartClick()
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Green, contentColor = Brown),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                    ) {
+                                        val krotkaNazwa = place.name.substringBefore("(").trim()
+                                        Text(text = krotkaNazwa, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Karta ze szczegółami (pojawia się, gdy lektor czyta)
+            if (wybraneMiejsce != null) {
+                Dialog(onDismissRequest = {
+                    ttsManager.stop()
+                    wybraneMiejsce = null
+                }) {
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+                        modifier = Modifier.fillMaxWidth().padding(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val krotkaNazwa = wybraneMiejsce!!.name.substringBefore("(").trim()
+                            Text(
+                                text = krotkaNazwa,
+                                color = Brown,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "Lektor czyta teraz narrację dla tego budynku. Miłego spaceru!",
+                                color = Brown,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center
+                            )
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // 🚀 Przycisk ROZPOCZNIJ
                             Button(
                                 onClick = {
-                                    showFocusDialog = false
-                                    onStartClick() // Wywołanie rozpoczęcia spaceru
+                                    ttsManager.stop() // Przerwij mówienie
+                                    wybraneMiejsce = null // Zamknij okienko
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Brown,
-                                    contentColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(20.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth(0.85f)
-                                    .height(52.dp)
+                                colors = ButtonDefaults.buttonColors(containerColor = Brown)
                             ) {
-                                Text(
-                                    text = "ROZPOCZNIJ",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text("Zatrzymaj i zamknij", color = Color.White)
                             }
                         }
                     }
