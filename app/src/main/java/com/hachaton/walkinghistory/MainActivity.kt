@@ -27,6 +27,7 @@ import com.hachaton.walkinghistory.ui.screens.FriendsScreen
 import com.hachaton.walkinghistory.ui.screens.HistoryScreen
 import com.hachaton.walkinghistory.ui.screens.HomeScreen
 import com.hachaton.walkinghistory.ui.screens.NotificationScreen
+import com.hachaton.walkinghistory.ui.screens.ProfilScreen
 import com.hachaton.walkinghistory.ui.screens.SettingsScreen
 import com.hachaton.walkinghistory.ui.screens.StaredScreen
 import com.hachaton.walkinghistory.ui.screens.WelcomeScreen
@@ -68,6 +69,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSettingsClick = {
                                     currentScreen = "settings"
+                                },
+                                onProfileClick = {
+                                    currentScreen = "profile"
                                 }
                             )
                         }
@@ -122,6 +126,12 @@ class MainActivity : ComponentActivity() {
                             HistoryScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "profile" -> {
+                            ProfilScreen(
+                                username = savedUsername,
+                                onBackClick = { currentScreen = "home" }
                             )
                         }
                     }

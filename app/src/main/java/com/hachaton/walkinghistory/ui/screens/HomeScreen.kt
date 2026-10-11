@@ -5,9 +5,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,12 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,20 +52,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
-
-// --- IMPORTY BAZY I LEKTORA ---
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
-import com.hachaton.walkinghistory.AppDatabase
-import com.hachaton.walkinghistory.NearbyPlacesManager
-import com.hachaton.walkinghistory.Place
-import com.hachaton.walkinghistory.TtsManager
-
 import com.hachaton.walkinghistory.R
 import com.hachaton.walkinghistory.ui.components.MyMapView
 import com.hachaton.walkinghistory.ui.theme.Brown
 import com.hachaton.walkinghistory.ui.theme.Green
+import com.hachaton.walkinghistory.ui.theme.Orange
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
@@ -71,26 +65,18 @@ fun HomeScreen(
     username: String = "",
     onStartClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val displayName = if (username.isNotBlank()) username else "Użytkowniku"
-    val context = LocalContext.current
 
-    // STANY Z ORYGINALNEGO KODU
+    // Stan do wyświetlania pytania o czas skupienia po naciśnięciu START
     var showFocusDialog by rememberSaveable { mutableStateOf(false) }
+
+    // Stan suwaka od 0 do 4 (domyślnie środkowy index 2 = 10 sekund)
     var focusStep by rememberSaveable { mutableFloatStateOf(2f) }
 
-    // NOWE STANY
-    var wybraneMiejsce by remember { mutableStateOf<Place?>(null) }
-    var miejscaZBazy by remember { mutableStateOf<List<Place>>(emptyList()) }
-
-    val ttsManager = remember { TtsManager(context) }
-    val coroutineScope = rememberCoroutineScope() // Pozwala uruchamiać rzeczy w tle po kliknięciu
-
-    // Inicjalizacja bazy i Managera Miejsc
-    val db = remember { AppDatabase.getDatabase(context) }
-    val nearbyPlacesManager = remember { NearbyPlacesManager(context, db.placeDao()) }
-
+    val context = LocalContext.current
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -115,49 +101,43 @@ fun HomeScreen(
                 android.Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
-
-        // Pobieranie danych z bazy z zabezpieczeniem przed "wyścigiem"
-        val db = AppDatabase.getDatabase(context)
-        withContext(Dispatchers.IO) {
-            var pobrane = db.placeDao().getAllPlacesList()
-
-            // Jeśli lista jest pusta, dajemy bazie chwilę na zapisanie danych w tle
-            var proby = 0
-            while (pobrane.isEmpty() && proby < 10) {
-                kotlinx.coroutines.delay(300) // Czekamy 0.3 sekundy
-                pobrane = db.placeDao().getAllPlacesList() // Pytamy bazę ponownie
-                proby++
-            }
-
-            // Wrzucamy dane do naszego interfejsu
-            miejscaZBazy = pobrane
-        }
     }
 
+    // 5 opcji czasu skupienia
     val focusOptions = listOf("Bliskie zeru", "3 - 6 sekund", "10 sekund", "15 sekund", "30 sekund i więcej")
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
+            // Górny pasek z powitaniem użytkownika
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Green)
                     .statusBarsPadding()
-                    .height(50.dp)
+                    .height(70.dp)
                     .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Witaj $displayName!",
                     style = MaterialTheme.typography.titleLarge,
                     color = Brown,
-                    fontSize = 22.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
+                IconButton(onClick = onProfileClick) {
+                    Image(
+                        painter = painterResource(id = R.drawable.braz_pokolorowany),
+                        contentDescription = "Profil",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         },
         bottomBar = {
+            // Pasek narzędzi na dole
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,30 +146,69 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    IconButton(onClick = onStarClick, modifier = Modifier.size(80.dp)) {
+                // 1. Lewa sekcja (Gwiazdka w idealnie wyśrodkowanym brązowym boxie)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onStarClick() }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Image(
-                            painter = painterResource(id = R.drawable.gwiazdka),
+                            painter = painterResource(id = R.drawable.gwiazdkabezowa),
                             contentDescription = "Gwiazdka",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-                Box(modifier = Modifier.weight(1.8f), contentAlignment = Alignment.Center) {
+
+                // 2. Środkowa sekcja (Przycisk START - otwiera okno z pytaniem)
+                Box(
+                    modifier = Modifier.weight(1.8f),
+                    contentAlignment = Alignment.Center
+                ) {
                     Button(
-                        onClick = { showFocusDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
+                        onClick = { showFocusDialog = true }, // 👈 Otwiera okienko z pytaniem
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brown,
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(30.dp),
                         modifier = Modifier.height(72.dp)
                     ) {
-                        Text(text = "START", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "START",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    IconButton(onClick = onSettingsClick, modifier = Modifier.size(100.dp)) {
+
+                // 3. Prawa sekcja (Kołowrotek w idealnie wyśrodkowanym brązowym boxie)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onSettingsClick() }
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Image(
-                            painter = painterResource(id = R.drawable.kolowrotek),
+                            painter = painterResource(id = R.drawable.kolowrotekbezowy),
                             contentDescription = "Ustawienia",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -202,21 +221,27 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // Mapka po środku ekranu
             MyMapView(hasLocationPermission = hasLocationPermission)
 
-            // 1. Okienko z czasem skupienia
+            // ❓ Okienko z pytaniem o czas skupienia po przyciśnięciu START
             if (showFocusDialog) {
                 Dialog(onDismissRequest = { showFocusDialog = false }) {
                     Card(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        modifier = Modifier.fillMaxWidth().padding(12.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            // Nagłówek pytania
                             Text(
                                 text = "Jaki masz czas skupienia?",
                                 style = MaterialTheme.typography.titleLarge,
@@ -226,6 +251,8 @@ fun HomeScreen(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
+
+                            // Wybrana wartość podświetlona
                             val currentIndex = focusStep.roundToInt().coerceIn(0, 4)
                             Text(
                                 text = focusOptions[currentIndex],
@@ -235,18 +262,24 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
+
+                            // 🎚️ Suwak z 5 pozycjami
                             Slider(
                                 value = focusStep,
                                 onValueChange = { focusStep = it },
                                 valueRange = 0f..4f,
-                                steps = 3,
+                                steps = 3, // Daje 5 pozycji (0, 1, 2 [środek], 3, 4)
                                 colors = SliderDefaults.colors(
                                     thumbColor = Brown,
                                     activeTrackColor = Green,
                                     inactiveTrackColor = Brown.copy(alpha = 0.2f)
                                 ),
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
                             )
+
+                            // Etykiety krańcowe pod suwakiem
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -254,89 +287,29 @@ fun HomeScreen(
                                 Text("Bliskie zeru", fontSize = 12.sp, color = Brown.copy(alpha = 0.7f))
                                 Text("30s i więcej", fontSize = 12.sp, color = Brown.copy(alpha = 0.7f))
                             }
+
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Przycisk ROZPOCZNIJ
+                            // 🚀 Przycisk ROZPOCZNIJ
                             Button(
                                 onClick = {
-                                    showFocusDialog = false // Zamykamy suwak
-
-                                    // Uruchamiamy wyszukiwanie lokalizacji w tle
-                                    coroutineScope.launch {
-                                        // Ustawiamy promień na 5 kilometrów (5.0), żeby na 100% zadziałało na prezentacji z wnętrza budynku!
-                                        val closestPlace = nearbyPlacesManager.getClosestPlace(5.0)
-
-                                        if (closestPlace != null) {
-                                            wybraneMiejsce = closestPlace // To wyświetla kartę informacyjną
-
-                                            // Łączymy teksty i odpalamy lektora
-                                            val pelnyTekst = "${closestPlace.name}. ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
-                                            ttsManager.speak(pelnyTekst)
-
-                                            onStartClick() // Powiadamia aplikację o starcie
-                                        }
-                                    }
+                                    showFocusDialog = false
+                                    onStartClick() // Wywołanie rozpoczęcia spaceru
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Brown,
+                                    contentColor = Color.White
+                                ),
                                 shape = RoundedCornerShape(20.dp),
-                                modifier = Modifier.fillMaxWidth(0.85f).height(52.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth(0.85f)
+                                    .height(52.dp)
                             ) {
-                                Text(text = "ROZPOCZNIJ", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (wybraneMiejsce != null) {
-                Dialog(onDismissRequest = {
-                    ttsManager.stop()
-                    wybraneMiejsce = null
-                }) {
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                        modifier = Modifier.fillMaxWidth().padding(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            val krotkaNazwa = wybraneMiejsce!!.name.substringBefore("(").trim()
-
-                            Text(
-                                text = "Jesteś w pobliżu:",
-                                color = Brown,
-                                fontSize = 16.sp,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Text(
-                                text = krotkaNazwa,
-                                color = Brown,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = "Lektor czyta teraz narrację dla tego budynku. Miłego spaceru!",
-                                color = Brown,
-                                fontSize = 16.sp,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Button(
-                                onClick = {
-                                    ttsManager.stop() // Przerwij mówienie
-                                    wybraneMiejsce = null // Zamknij okienko
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Brown)
-                            ) {
-                                Text("Zatrzymaj i zamknij", color = Color.White)
+                                Text(
+                                    text = "ROZPOCZNIJ",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -345,7 +318,6 @@ fun HomeScreen(
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
