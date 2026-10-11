@@ -40,6 +40,7 @@ import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
 fun NotificationScreen(
+    modifier: Modifier  = Modifier,
     onBackClick: () -> Unit = {}
 ) {
     // Stan dla dwóch opcji powiadomień
@@ -47,7 +48,7 @@ fun NotificationScreen(
     var isSoundEnabled by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // Górny pasek z nagłówkiem Powiadomienia

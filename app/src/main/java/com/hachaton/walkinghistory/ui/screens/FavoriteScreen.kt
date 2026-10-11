@@ -84,6 +84,7 @@ class FavoritesManager(context: Context) {
 
 @Composable
 fun FavoriteScreen(
+    modifier: Modifier  = Modifier,
     onBackClick: () -> Unit = {}
 ) {
 
@@ -123,7 +124,7 @@ fun FavoriteScreen(
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +39,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -66,13 +69,16 @@ import com.hachaton.walkinghistory.ui.theme.Green
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 import com.hachaton.walkinghistory.ui.screens.HistoryManager
+import com.hachaton.walkinghistory.ui.theme.Orange
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier  = Modifier,
     username: String = "",
     onStartClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
 ) {
     val displayName = if (username.isNotBlank()) username else "Użytkowniku"
     val context = LocalContext.current
@@ -140,27 +146,37 @@ fun HomeScreen(
     val focusOptions = listOf("Bliskie zeru", "3 - 6 sekund", "10 sekund", "15 sekund", "30 sekund i więcej")
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         topBar = {
+            // Górny pasek z powitaniem użytkownika
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Green)
                     .statusBarsPadding()
-                    .height(50.dp)
+                    .height(70.dp)
                     .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Witaj $displayName!",
                     style = MaterialTheme.typography.titleLarge,
                     color = Brown,
-                    fontSize = 22.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
+                IconButton(onClick = onProfileClick) {
+                    Image(
+                        painter = painterResource(id = R.drawable.braz_pokolorowany),
+                        contentDescription = "Profil",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         },
         bottomBar = {
+            // Pasek narzędzi na dole
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,30 +185,69 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    IconButton(onClick = onStarClick, modifier = Modifier.size(80.dp)) {
+                // 1. Lewa sekcja (Gwiazdka w idealnie wyśrodkowanym brązowym boxie)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onStarClick() }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Image(
-                            painter = painterResource(id = R.drawable.gwiazdka),
+                            painter = painterResource(id = R.drawable.gwiazdkabezowa),
                             contentDescription = "Gwiazdka",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-                Box(modifier = Modifier.weight(1.8f), contentAlignment = Alignment.Center) {
+
+                // 2. Środkowa sekcja (Przycisk START - otwiera okno z pytaniem)
+                Box(
+                    modifier = Modifier.weight(1.8f),
+                    contentAlignment = Alignment.Center
+                ) {
                     Button(
-                        onClick = { showFocusDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Brown, contentColor = Color.White),
+                        onClick = { showFocusDialog = true }, // 👈 Otwiera okienko z pytaniem
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brown,
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(30.dp),
                         modifier = Modifier.height(72.dp)
                     ) {
-                        Text(text = "START", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "START",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    IconButton(onClick = onSettingsClick, modifier = Modifier.size(100.dp)) {
+
+                // 3. Prawa sekcja (Kołowrotek w idealnie wyśrodkowanym brązowym boxie)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Orange)
+                            .clickable { onSettingsClick() }
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Image(
-                            painter = painterResource(id = R.drawable.kolowrotek),
+                            painter = painterResource(id = R.drawable.kolowrotekbezowy),
                             contentDescription = "Ustawienia",
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -273,7 +328,7 @@ fun HomeScreen(
                                             wybraneMiejsce = closestPlace // To wyświetla kartę informacyjną
 
                                             // Łączymy teksty i odpalamy lektora
-                                            val pelnyTekst = "${closestPlace.name}. ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
+                                            val pelnyTekst = "${closestPlace.name} ${closestPlace.description} ${closestPlace.narration} ${closestPlace.scene}"
 
                                             ttsManager.speak(pelnyTekst)
                                             historyManager.addEntry(closestPlace.name, isFromFavorites = false)

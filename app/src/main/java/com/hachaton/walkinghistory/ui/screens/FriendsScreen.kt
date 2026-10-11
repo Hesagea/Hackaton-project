@@ -55,6 +55,7 @@ data class FriendProfile(
 
 @Composable
 fun FriendsScreen(
+    modifier: Modifier  = Modifier,
     onBackClick: () -> Unit = {}
 ) {
     // Stan pola wyszukiwarki
@@ -72,7 +73,7 @@ fun FriendsScreen(
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // Górny pasek z nagłówkiem Znajomi

@@ -33,6 +33,7 @@ import com.hachaton.walkinghistory.ui.screens.WelcomeScreen
 import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.hachaton.walkinghistory.ui.screens.ProfilScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -61,17 +62,22 @@ class MainActivity : ComponentActivity() {
                         }
                         "home" -> {
                             HomeScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 username = savedUsername,
                                 onStarClick = {
                                     currentScreen = "stared"
                                 },
                                 onSettingsClick = {
                                     currentScreen = "settings"
+                                },
+                                onProfileClick = {
+                                    currentScreen = "profile"
                                 }
                             )
                         }
                         "settings" -> {
                             SettingsScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = {
                                     currentScreen = "home"
                                 },
@@ -88,32 +94,44 @@ class MainActivity : ComponentActivity() {
                         }
                         "stared" -> {
                             StaredScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "home" }
                             )
                         }
                         "friends" -> {
                             FriendsScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "favorite" -> {
                             FavoriteScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "notification" -> {
                             NotificationScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "font" -> {
                             FontScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
                             )
                         }
                         "history" -> {
                             HistoryScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onBackClick = { currentScreen = "settings" }
+                            )
+                        }
+                        "profile" -> {
+                            ProfilScreen(
+                                username = savedUsername,
+                                onBackClick = { currentScreen = "home" }
                             )
                         }
                     }

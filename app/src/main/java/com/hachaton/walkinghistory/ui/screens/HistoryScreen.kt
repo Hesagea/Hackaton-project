@@ -44,6 +44,7 @@ import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
 fun HistoryScreen(
+    modifier: Modifier  = Modifier,
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -53,7 +54,7 @@ fun HistoryScreen(
     var expandedDate by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(

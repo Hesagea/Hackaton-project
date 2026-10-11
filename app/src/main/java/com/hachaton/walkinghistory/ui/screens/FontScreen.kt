@@ -45,6 +45,7 @@ import com.hachaton.walkinghistory.ui.theme.WalkingHistoryTheme
 
 @Composable
 fun FontScreen(
+    modifier: Modifier  = Modifier,
     onBackClick: () -> Unit = {}
 ) {
     // Stan suwaka od 0 do 4 (5 pozycji). Domyślnie środkowa pozycja (2.0f)
@@ -59,7 +60,7 @@ fun FontScreen(
     val currentFontName = fontNames[currentIndex]
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // Górny pasek z nagłówkiem Czcionka
